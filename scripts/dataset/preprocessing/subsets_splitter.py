@@ -12,7 +12,7 @@ class DataSplitter(Element):
 
     def _drop_last_fields(self, df):
         last_fields_without_target = [f for f in self.config.last_custom_fields()
-                                      if f != self.config.last_name(self.target_field)]
+                                      if f != self.config.target_column()]
         df.drop(last_fields_without_target, axis=1, inplace=True)
 
     def process(self, df: pd.DataFrame) -> Dict[str, pd.DataFrame]:
@@ -22,6 +22,9 @@ class DataSplitter(Element):
 
         # Drop all fields from last state except target in last state
         self._drop_last_fields(df)
+
+        # Drop target NaNs
+        df = df[df[self.config.target_column()] != NAN_STR]
 
         if not self.config.target_use_other:
             df = df[df[self.config.target_column()] != OTHER_STR]
