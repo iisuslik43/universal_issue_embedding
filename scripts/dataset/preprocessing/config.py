@@ -18,11 +18,11 @@ def mapping_from_dict(d: Dict[str, str]):
 @dataclass
 class PreprocessingConfig(DatasetCreatingConfig):
     target_field: str
-    custom_fields_mappings: Dict[str, Any] = field(default_factory=dict)
-    percent_for_other = 0.05
+    percent_for_other: float = 0.1
     target_use_other: bool = True
     target_use_unresolved_on_train: bool = True
-    train_proportion = 0.8
+    train_proportion: float = 0.8
+    custom_fields_mappings: Dict[str, Any] = field(default_factory=dict)
 
     def last_custom_fields(self):
         return [self.last_name(field) for field in self.custom_fields]

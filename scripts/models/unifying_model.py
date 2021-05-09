@@ -1,77 +1,55 @@
-from typing import Dict
+from typing import Dict, List, Optional
 import numpy as np
-from sklearn.linear_model import LogisticRegression
-from sklearn.multiclass import OneVsRestClassifier
-from sklearn.pipeline import make_pipeline
-from sklearn.metrics import accuracy_score
-from sklearn.preprocessing import StandardScaler
+import seaborn as sn
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.metrics import accuracy_score, confusion_matrix
 
-from scripts.common.element import Element
+from scripts.dataset.preprocessing.config import PreprocessingConfig
+from scripts.models.base_model import BaseModel
 
 
-class UnifyingModel(Element):
+class UnifyingModel(BaseModel):
 
-    def process(self, data):
-        pass
+    def __init__(self, config: PreprocessingConfig, models: List[BaseModel]):
+        super().__init__(config, [])
+        self.models = models
 
-    def __init__(self, model_params: Dict = None, use_one_vs_all=False, use_code=False):
-        self.model_params = model_params
-        self.use_one_vs_all = use_one_vs_all
-        self.use_code = use_code
-        self.models = None
-        if self.model_params is None:
-            self.model_params = {'max_iter': 5000, 'C': 0.001}
+    def fit(self, data: Dict[str, pd.DataFrame]) -> None:
+        for model in self.iterate(self.models, 'fitting unifying model'):
+            model.fit(data)
 
-    def standard_model(self):
-        clf = LogisticRegression(**self.model_params)
-        if self.use_one_vs_all:
-            clf = OneVsRestClassifier(clf)
-        return make_pipeline(StandardScaler(with_mean=False),
-                             clf)
+    def predict_proba(self, df: pd.DataFrame) -> np.array:
+        predicts = np.array([model.predict_proba(df) for model in self.models])
+        return predicts.transpose((1, 2, 0)).sum(axis=-1)
 
-    def iterate_models(self, full_data):
-        if self.models is None:
-            self.models = {}
-            for sub_data_name in full_data.keys():
-                if sub_data_name != 'res':
-                    if self.use_code or (not self.use_code and 'code' not in sub_data_name):
-                        self.models[sub_data_name] = self.standard_model()
-        res = []
-        for sub_data_name, model in self.models.items():
-            res.append((model, full_data[sub_data_name]))
-        return res
+    def plot_confusion_matrix(self, df: pd.DataFrame):
+        predictions = self.predict(df)
+        target = df[self.target_name]
+        conf_matrix = confusion_matrix(target, predictions)
+        classes = target.unique()
+        df_cm = pd.DataFrame(conf_matrix,
+                             index=classes,
+                             columns=classes)
+        plt.figure(figsize=(10, 7))
+        return sn.heatmap(df_cm, annot=True)
 
-    def fit(self, full_data: Dict[str, np.array]):
-        for model, data in self.iterate(self.iterate_models(full_data), True, 'fitting unifying model'):
-            if np.isnan(data).any():
-                filtered = data[~np.isnan(data[:, 0])]
-                if len(filtered) != 0:
-                    model.fit(filtered, full_data['res'][~np.isnan(data[:, 0])])
-            else:
-                model.fit(data, full_data['res'])
+    def score(self, df: pd.DataFrame, score_func=accuracy_score, score_params=None) -> float:
+        if score_params is None:
+            score_params = {}
+        predictions = self.predict(df)
+        return score_func(df[self.target_name], predictions, **score_params)
 
-    def score(self, full_data: Dict[str, np.array]):
-        predictions = self.predict(full_data)
-        return accuracy_score(full_data['res'], predictions)
+    def _classes(self):
+        return self.models[0].clf.classes_
 
-    def predict(self, full_data: Dict[str, np.array]):
-        classes = list(self.models.values())[0].classes_
-        probs = self.predict_proba(full_data)
+    def predict(self, df: pd.DataFrame) -> np.array:
+        classes = self._classes()
+        probs = self.predict_proba(df)
         return np.array([classes[np.argmax(pred)] for pred in probs])
 
-    def predict_proba(self, full_data: Dict[str, np.array]):
-        predictions = []
-        models = self.iterate_models(full_data)
-        for i in range(len(full_data['res'])):
-            count = len(models)
-            predict = []
-            for model, data in models:
-                if np.isnan(data[i][0]):
-                    count -= 1
-                else:
-                    predict.append(model.predict_proba([data[i]]))
-            predict = np.concatenate(predict)
-            predict = predict.sum(axis=0) / count
-            predictions.append(predict)
+    def _fit(self, full_data: Dict[str, pd.DataFrame]) -> None:
+        pass
 
-        return np.array(predictions)
+    def _predict_proba(self, df: pd.DataFrame) -> np.array:
+        pass

@@ -25,6 +25,8 @@ class RawDataReader(Element):
                 if 'field' in obj:
                     data_json.append(obj['field'])
                     data_json[-1]['entityId'] = obj['entityId']
+                else:
+                    data_json.append(obj)
         return data_json
 
     def process(self, data_filenames: List[Path]) -> pd.DataFrame:
