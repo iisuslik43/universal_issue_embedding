@@ -17,17 +17,18 @@ class DataSplitter(Element):
 
     def process(self, df: pd.DataFrame) -> Dict[str, pd.DataFrame]:
 
-        # Drop target value in first state
-        df.drop([self.target_field], axis=1)
+        if not self.config.is_predicting_duplicate():
+            # Drop target value in first state
+            df = df.drop([self.target_field], axis=1)
+
+            # Drop target NaNs
+            df = df[df[self.config.target_column()] != NAN_STR]
+
+            if not self.config.target_use_other:
+                df = df[df[self.config.target_column()] != OTHER_STR]
 
         # Drop all fields from last state except target in last state
         self._drop_last_fields(df)
-
-        # Drop target NaNs
-        df = df[df[self.config.target_column()] != NAN_STR]
-
-        if not self.config.target_use_other:
-            df = df[df[self.config.target_column()] != OTHER_STR]
 
         # Reset index, because some values may be dropped
         df.reset_index(drop=True, inplace=True)
@@ -37,9 +38,11 @@ class DataSplitter(Element):
         df_train = df[:train_length]
         if not self.config.target_use_unresolved_on_train:
             df_train = df_train[df_train['is_resolved']]
+            df_train.reset_index(drop=True, inplace=True)
 
         df_test = df[train_length:]
         df_test = df_test[df_test['is_resolved']]
+        df_test.reset_index(drop=True, inplace=True)
 
         data = {
             'train': df_train,
