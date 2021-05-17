@@ -1,5 +1,5 @@
 from scripts.dataset.creating.config import DatasetCreatingConfig
-from scripts.dataset.preprocessing.config import PreprocessingConfig
+from scripts.dataset.preprocessing.config import PreprocessingConfig, DUPLICATE_TARGET
 
 CUSTOM_FIELDS = {
     'Rider': ['Type', 'Assignee', 'State', 'Subsystem', 'User priority', 'Technology', 'OS'],
@@ -17,8 +17,16 @@ CONFIGS = {
                 target_field='Subsystem',
                 custom_fields=CUSTOM_FIELDS['Rider'],
                 custom_fields_mappings={
-                    'Subsystem': lambda x: x.split(' - ')[0],
-                    'User priority': lambda x: 'NORMAL' if x in ['Normal', 'Nice to have'] else 'HIGH'
+                    'Subsystem': lambda x: x.split(' - ')[0]
+                }
+            )
+        },
+        'Duplicate': {
+            'preprocessing': PreprocessingConfig(
+                target_field=DUPLICATE_TARGET,
+                custom_fields=CUSTOM_FIELDS['Rider'],
+                custom_fields_mappings={
+                    'Subsystem': lambda x: x.split(' - ')[0]
                 }
             )
         },
@@ -44,7 +52,15 @@ CONFIGS = {
                 custom_fields=CUSTOM_FIELDS['Kotlin'],
                 custom_fields_mappings={
                     'Subsystems': lambda x: x.split('.')[0],
-                    'Priority': lambda x: 'NORMAL' if x in ['Normal', 'Minor'] else 'HIGH'
+                }
+            )
+        },
+        'Duplicate': {
+            'preprocessing': PreprocessingConfig(
+                target_field=DUPLICATE_TARGET,
+                custom_fields=CUSTOM_FIELDS['Kotlin'],
+                custom_fields_mappings={
+                    'Subsystems': lambda x: x.split('.')[0]
                 }
             )
         },
@@ -69,7 +85,15 @@ CONFIGS = {
                 custom_fields=CUSTOM_FIELDS['IDEA'],
                 custom_fields_mappings={
                     'Subsystem': lambda x: x.split('.')[0],
-                    'Priority': lambda x: 'NORMAL' if x in ['Normal', 'Minor'] else 'HIGH'
+                }
+            )
+        },
+        'Duplicate': {
+            'preprocessing': PreprocessingConfig(
+                target_field=DUPLICATE_TARGET,
+                custom_fields=CUSTOM_FIELDS['IDEA'],
+                custom_fields_mappings={
+                    'Subsystem': lambda x: x.split('.')[0]
                 }
             )
         },

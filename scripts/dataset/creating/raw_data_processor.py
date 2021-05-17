@@ -36,6 +36,8 @@ class RawDataProcessor(Element):
         df['summary'] = df['summary'].fillna('')
         df['attachments'] = df['attachments'].apply(lambda x: x if type(x) is list else [])
         df['links'] = df['links'].apply(lambda x: x if type(x) is list else [])
+        # for each issue's state set final list of links
+        df['links'] = df['links'].groupby(df['entityId']).transform('last')
 
         df['votes'] = df['votes'].astype(int)
         df['commentsCount'] = df['commentsCount'].astype(int)

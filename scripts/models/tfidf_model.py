@@ -58,12 +58,16 @@ class TfidfModel(BaseModel):
 
     def _fit(self, full_data: Dict[str, pd.DataFrame]) -> None:
         data, target = self.to_data_target(full_data['train'])
+        data = self.unite_pairs(data)
         data = data[self.features[0]]
         data_transformed = self.vectorizer.fit_transform(data)
+        data_transformed = self.concat_pairs(data_transformed.toarray())
         self.clf.fit(data_transformed, target)
 
     def _predict_proba(self, data: pd.DataFrame) -> np.array:
+        data = self.unite_pairs(data)
         data = data[self.features[0]]
         data_transformed = self.vectorizer.transform(data)
+        data_transformed = self.concat_pairs(data_transformed.toarray())
         return self.clf.predict_proba(data_transformed)
 

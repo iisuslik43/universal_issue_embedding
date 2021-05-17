@@ -18,7 +18,9 @@ class DataMapper(Element):
 
     def set_other_custom_fields(self, df: pd.DataFrame) -> None:
         for field_name in self.config.custom_fields:
-            counts: dict = df[field_name].value_counts().to_dict()
+            last_field_name = self.config.last_name(field_name)
+            counts: dict = df[last_field_name].value_counts().to_dict()
+            counts.update(df[field_name].value_counts().to_dict())
             if NAN_STR in counts:
                 del counts[NAN_STR]
             max_count = max(counts.values())
@@ -28,12 +30,18 @@ class DataMapper(Element):
                 return x if x not in counts or counts[x] > threshold else OTHER_STR
 
             df[field_name] = df[field_name].apply(other)
-            last_field_name = self.config.last_name(field_name)
             df[last_field_name] = df[last_field_name].apply(other)
+
+    def filter_issues_from_range(self, df: pd.DataFrame) -> pd.DataFrame:
+        df['created_datetime'] = pd.to_datetime(df['created'].astype(int), unit='ms')
+        start, end = self.config.issues_range
+        df = df[start < df['created_datetime']]
+        df = df[df['created_datetime'] < end]
+        return df
 
     def process(self, data: pd.DataFrame) -> pd.DataFrame:
         df: pd.DataFrame = data.copy()
-
+        df = self.filter_issues_from_range(df)
         self.fill_nans(df)
         self.map_custom_fields(df)
         self.set_other_custom_fields(df)

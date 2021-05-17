@@ -26,13 +26,16 @@ class TableModel(BaseModel):
 
     def _fit(self, full_data: Dict[str, pd.DataFrame]) -> None:
         data, target = self.to_data_target(full_data['train'])
+        data = self.unite_pairs(data)
         if self.use_one_hot:
             data = self._add_one_hot(data)
         self.train_columns = data.columns
+        data = self.concat_pairs(data.to_numpy())
         self.clf.fit(data, target)
 
     def _predict_proba(self, df: pd.DataFrame) -> np.array:
         data, _ = self.to_data_target(df)
+        data = self.unite_pairs(data)
         if self.use_one_hot:
             data = self._add_one_hot(data)
         if set(data.columns) != set(self.train_columns):
@@ -46,4 +49,5 @@ class TableModel(BaseModel):
                     print(f'Column {column_name} was only on test')
                     data.drop(column_name, axis=1, inplace=True)
 
+        data = self.concat_pairs(data.to_numpy())
         return self.clf.predict_proba(data)

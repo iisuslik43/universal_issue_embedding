@@ -18,7 +18,12 @@ class BaseModel(Element):
                  config: PreprocessingConfig,
                  features: List[str]):
         self.target_name = config.target_column()
-        self.features = features
+        self.original_features = features
+        self.is_predicting_duplicate = config.is_predicting_duplicate()
+        if self.is_predicting_duplicate:
+            self.features = features + ['2_' + feature for feature in features]
+        else:
+            self.features = features
 
     def to_data_target(self, df: pd.DataFrame):
         return df[self.features], df[self.target_name]
@@ -45,6 +50,20 @@ class BaseModel(Element):
             return all_prob
         else:
             return self._predict_proba(df)
+
+    def unite_pairs(self, df: pd.DataFrame) -> pd.DataFrame:
+        if not self.is_predicting_duplicate:
+            return df
+        second_names = ['2_' + feature for feature in self.original_features]
+        return pd.concat((df[self.original_features],
+                          df[second_names].rename(mapper=lambda x: x[2:], axis=1)),
+                         axis=0)
+
+    def concat_pairs(self, data: np.array) -> np.array:
+        if not self.is_predicting_duplicate:
+            return data
+        middle = len(data) // 2
+        return np.concatenate((data[:middle], data[middle:]), axis=1)
 
     @abstractmethod
     def _fit(self, full_data: Dict[str, pd.DataFrame]) -> None:
