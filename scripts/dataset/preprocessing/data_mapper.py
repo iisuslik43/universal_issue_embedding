@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 from scripts.common.element import Element
 from scripts.dataset.preprocessing.config import PreprocessingConfig, NAN_STR, OTHER_STR
@@ -39,9 +40,14 @@ class DataMapper(Element):
         df = df[df['created_datetime'] < end]
         return df
 
+    def _extract_features(self, df: pd.DataFrame) -> None:
+        if 'screenshots' in df.columns:
+            df['screenshots'] = df['screenshots'].apply(lambda s: np.nan if s == '' else s)
+
     def process(self, data: pd.DataFrame) -> pd.DataFrame:
         df: pd.DataFrame = data.copy()
         df = self.filter_issues_from_range(df)
+        self._extract_features(df)
         self.fill_nans(df)
         self.map_custom_fields(df)
         self.set_other_custom_fields(df)

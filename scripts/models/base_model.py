@@ -7,9 +7,8 @@ from scripts.common.element import Element
 from scripts.dataset.preprocessing.config import PreprocessingConfig
 
 
-def calc_not_nans_index(df1):
-    return (~pd.isna(df1).any(1)).nonzero()[0]
-
+def calc_not_nans_index(df1: pd.DataFrame):
+    return df1[~pd.isna(df1).any(axis=1)].index
 
 class BaseModel(Element):
     __metaclass__ = ABCMeta
@@ -34,6 +33,8 @@ class BaseModel(Element):
             data, _ = self.to_data_target(df)
             not_nans_index = calc_not_nans_index(data)
             if len(not_nans_index) != len(data):
+                print(subset_name, 'has', round(float(len(not_nans_index)) / len(data) * 100, 2),
+                      '% of not nans data for', self.features)
                 data_result[subset_name] = df.iloc[not_nans_index]
             else:
                 data_result[subset_name] = df

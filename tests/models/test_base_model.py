@@ -20,6 +20,8 @@ class MockModel(BaseModel):
 class TestBaseModel(BasicModelTest):
     def test_not_nan_index(self):
         df = self.full_data['train']
+        print(calc_not_nans_index(df))
+        print(calc_not_nans_index(df))
         self.assertTrue(np.allclose(calc_not_nans_index(df), np.array([2])))
         self.assertTrue(np.allclose(calc_not_nans_index(df[['with_nans1', 'with_nans2']]), np.array([2])))
         self.assertTrue(np.allclose(calc_not_nans_index(df[['with_nans1']]), np.array([0, 2])))

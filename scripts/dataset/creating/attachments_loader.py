@@ -42,7 +42,15 @@ class AttachmentsLoader(Element):
                                                         'Downloading attachments',
                                                         total_count=len(df)):
             files_for_issue[issue_id] = []
-            if len(issue_attachments) != 0:
+            something_not_downloaded = False
+            for attachment in issue_attachments:
+                extension = attachment['value'].split('.')[-1]
+                if extension in self.extensions_to_load:
+                    file_name = attachment['id'] + '.' + extension
+                    if not (self.dir_to_save / file_name).exists():
+                        something_not_downloaded = True
+
+            if something_not_downloaded:
                 attachments = self._get_attachments(issue_id)
                 for attachment in attachments:
                     if attachment['extension'] in self.extensions_to_load:
